@@ -584,26 +584,70 @@ async function handleAiRequest() {
     toggleLoading(true);
 
     try {
-        const response = await fetch('/api-proxy', {
+        const owner = '<owner>';
+        const repo = '<repo>';
+        const token = 'YOUR_GITHUB_TOKEN';
+
+        const dispatchResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/ai-proxy.yml/dispatches`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json'
             },
-            body: JSON.stringify({ userPrompt, tableData })
+            body: JSON.stringify({
+                ref: 'main',
+                inputs: {
+                    user_prompt: userPrompt,
+                    table_data: JSON.stringify(tableData)
+                }
+            })
         });
 
-        if (!response.ok) {
-            const errorDetail = await response.json().catch(() => ({}));
-            throw new Error(`Proxy request failed: ${errorDetail?.error || response.statusText}`);
+        if (!dispatchResp.ok) {
+            const errText = await dispatchResp.text();
+            throw new Error(`Dispatch failed: ${errText || dispatchResp.statusText}`);
         }
 
-        const result = await response.json();
-        let updatedDataText = result.choices?.[0]?.message?.content;
-        if (!updatedDataText) throw new Error("AI response was empty or malformed.");
+        // Retrieve latest workflow run
+        let runId = null;
+        while (!runId) {
+            const runsResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/ai-proxy.yml/runs?per_page=1`, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
+            const runsData = await runsResp.json();
+            runId = runsData.workflow_runs?.[0]?.id;
+            if (!runId) await new Promise(r => setTimeout(r, 3000));
+        }
 
-        const jsonMatch = updatedDataText.match(/\[[\s\S]*\]/);
+        // Poll run status until completion
+        let completed = false;
+        while (!completed) {
+            const runResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}`, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
+            const runData = await runResp.json();
+            if (runData.status === 'completed') {
+                completed = true;
+                if (runData.conclusion !== 'success') {
+                    throw new Error(`Workflow run failed: ${runData.conclusion}`);
+                }
+            } else {
+                await new Promise(r => setTimeout(r, 3000));
+            }
+        }
+
+        // Retrieve AI response from job outputs
+        const jobsResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/jobs`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+        });
+        const jobsData = await jobsResp.json();
+        const aiResponse = jobsData.jobs?.[0]?.outputs?.ai_response;
+        if (!aiResponse) throw new Error('No AI response found in workflow output.');
+
+        const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
         if (!jsonMatch) throw new Error("AI did not return a valid JSON array.");
-        
+
         const updatedData = JSON.parse(jsonMatch[0]);
 
         if (Array.isArray(updatedData)) {
