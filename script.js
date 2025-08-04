@@ -584,37 +584,34 @@ async function handleAiRequest() {
     toggleLoading(true);
 
     try {
-        const response = await fetch('/api-proxy', {
+        const token = localStorage.getItem('GITHUB_TOKEN');
+        if (!token) {
+            throw new Error('Missing GitHub token in localStorage under "GITHUB_TOKEN".');
+        }
+
+        const response = await fetch('https://api.github.com/repos/richiewg3/NeonDreamz/actions/workflows/ai-request.yml/dispatches', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github+json',
+                'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ userPrompt, tableData })
+            body: JSON.stringify({
+                ref: 'main',
+                inputs: {
+                    prompt: userPrompt,
+                    table: JSON.stringify(tableData)
+                }
+            })
         });
 
         if (!response.ok) {
             const errorDetail = await response.json().catch(() => ({}));
-            throw new Error(`Proxy request failed: ${errorDetail?.error || response.statusText}`);
+            throw new Error(`Workflow dispatch failed: ${errorDetail?.message || response.statusText}`);
         }
 
-        const result = await response.json();
-        let updatedDataText = result.choices?.[0]?.message?.content;
-        if (!updatedDataText) throw new Error("AI response was empty or malformed.");
-
-        const jsonMatch = updatedDataText.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) throw new Error("AI did not return a valid JSON array.");
-        
-        const updatedData = JSON.parse(jsonMatch[0]);
-
-        if (Array.isArray(updatedData)) {
-            tableData = updatedData;
-            pushHistory();
-            saveToLocalStorage();
-            renderTable();
-            aiPrompt.value = '';
-        } else {
-            throw new Error("AI did not return a valid data array structure.");
-        }
+        showModal('Request Sent', 'Your AI request was submitted. Results will be available after the GitHub Action completes.');
+        aiPrompt.value = '';
     } catch (error) {
         console.error('Error with AI request:', error);
         showModal('AI Request Error', `An error occurred. Details: ${error.message}`);
