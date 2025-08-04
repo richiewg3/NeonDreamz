@@ -584,37 +584,30 @@ async function handleAiRequest() {
     toggleLoading(true);
 
     try {
-        const response = await fetch('/api-proxy', {
+        const owner = 'YOUR_GITHUB_USERNAME';
+        const repo = 'YOUR_REPO_NAME';
+        const githubToken = (window.GITHUB_TOKEN || '').trim();
+        const dispatchUrl = `https://api.github.com/repos/${owner}/${repo}/dispatches`;
+
+        const response = await fetch(dispatchUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json',
+                ...(githubToken ? { 'Authorization': `Bearer ${githubToken}` } : {})
             },
-            body: JSON.stringify({ userPrompt, tableData })
+            body: JSON.stringify({
+                event_type: 'ai-table-edit',
+                client_payload: { userPrompt, tableData }
+            })
         });
 
         if (!response.ok) {
-            const errorDetail = await response.json().catch(() => ({}));
-            throw new Error(`Proxy request failed: ${errorDetail?.error || response.statusText}`);
+            const errorDetail = await response.text();
+            throw new Error(`GitHub dispatch failed: ${errorDetail || response.statusText}`);
         }
 
-        const result = await response.json();
-        let updatedDataText = result.choices?.[0]?.message?.content;
-        if (!updatedDataText) throw new Error("AI response was empty or malformed.");
-
-        const jsonMatch = updatedDataText.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) throw new Error("AI did not return a valid JSON array.");
-        
-        const updatedData = JSON.parse(jsonMatch[0]);
-
-        if (Array.isArray(updatedData)) {
-            tableData = updatedData;
-            pushHistory();
-            saveToLocalStorage();
-            renderTable();
-            aiPrompt.value = '';
-        } else {
-            throw new Error("AI did not return a valid data array structure.");
-        }
+        showModal('AI Request Sent', 'Your request was dispatched to GitHub Actions.');
     } catch (error) {
         console.error('Error with AI request:', error);
         showModal('AI Request Error', `An error occurred. Details: ${error.message}`);
