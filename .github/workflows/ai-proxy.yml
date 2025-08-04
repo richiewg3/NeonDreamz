@@ -1,0 +1,56 @@
+name: AI Proxy
+
+on:
+  workflow_dispatch:
+    inputs:
+      user_prompt:
+        description: 'User prompt'
+        required: true
+      table_data:
+        description: 'Table data'
+        required: true
+
+jobs:
+  call-ai:
+    runs-on: ubuntu-latest
+    outputs:
+      ai_response: ${{ steps.call.outputs.ai_response }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Call OpenRouter
+        id: call
+        env:
+          USER_PROMPT: ${{ github.event.inputs.user_prompt }}
+          TABLE_DATA: ${{ github.event.inputs.table_data }}
+          OPENROUTER_API_KEY: ${{ secrets.MYY_SECRET_SHH }}
+        run: |
+          node - <<'NODE' | tee "$GITHUB_OUTPUT"
+          const fs = require('fs');
+          const userPrompt = process.env.USER_PROMPT;
+          const tableData = process.env.TABLE_DATA;
+          const apiKey = process.env.OPENROUTER_API_KEY;
+
+          async function main() {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: 'anthropic/claude-3.5-sonnet',
+                messages: [
+                  { role: 'system', content: 'You are a helpful assistant.' },
+                  { role: 'user', content: `${userPrompt}\n\n${tableData}` },
+                ],
+              }),
+            });
+            const data = await response.json();
+            fs.writeFileSync('response.json', JSON.stringify(data, null, 2));
+            process.stdout.write(`ai_response=${JSON.stringify(data)}\n`);
+          }
+          main().catch(err => { console.error(err); process.exit(1); });
+          NODE
