@@ -1,28 +1,841 @@
+/*
+ * style.css
+ * This file contains all the styling for the Neon Portal Website.
+ * It combines the original neon-themed CSS with Tailwind CSS utilities for
+ * the new Data Table Editor, ensuring a consistent aesthetic.
+ */
+
+/* =======================================
+ * --- FONT IMPORTS AND GLOBAL STYLES ---
+ * ======================================= */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ===========================
+ * --- THEME VARIABLES ---
+ * =========================== */
+:root {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a2e;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --neon-primary: #00ffff;
+    --neon-secondary: #ff00ff;
+    --neon-accent: #ffff00;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+
+    /* Tailwind-based variables for the Data Table Editor */
+    --accent-color: #00ffff; /* Mapped to neon-primary */
+    --accent-hover: #00cccc;
+    --success-color: #38bdf8;
+    --success-hover: #0ea5e9;
+    --input-bg: #1f2937;
+    --input-border: #4b5563;
+}
+
+.light-theme {
+    --bg-primary: #f0f0f0;
+    --bg-secondary: #e0e0e0;
+    --glass-bg: rgba(0, 0, 0, 0.05);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --neon-primary: #0066cc;
+    --neon-secondary: #cc0066;
+    --neon-accent: #cc6600;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+
+    /* Tailwind-based variables for the Data Table Editor */
+    --accent-color: #0066cc;
+    --accent-hover: #0052a3;
+    --success-color: #16a34a;
+    --success-hover: #15803d;
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+}
+
+.party-theme {
+    --bg-primary: #1a0033;
+    --bg-secondary: #330066;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --neon-primary: #ff0080;
+    --neon-secondary: #00ff80;
+    --neon-accent: #8000ff;
+    --text-primary: #ffffff;
+    --text-secondary: #ffccff;
+
+    /* Tailwind-based variables for the Data Table Editor */
+    --accent-color: #ff0080;
+    --accent-hover: #cc0066;
+    --success-color: #00ff80;
+    --success-hover: #00cc66;
+    --input-bg: rgba(0, 0, 0, 0.5);
+    --input-border: rgba(255, 255, 255, 0.3);
+}
+
+/* ===============================
+ * --- CORE WEBSITE STYLING ---
+ * =============================== */
 body {
-	padding: 2rem;
-	font-family: -apple-system, BlinkMacSystemFont, "Arial", sans-serif;
+    font-family: 'Orbitron', sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    overflow-x: hidden;
+    transition: all 0.5s ease;
 }
 
-h1 {
-	font-size: 16px;
-	margin-top: 0;
+/* Party theme animated background */
+.party-theme body {
+    background-size: 400% 400%;
+    animation: party-gradient 15s ease infinite;
 }
 
-p {
-	color: rgb(107, 114, 128);
-	font-size: 15px;
-	margin-bottom: 10px;
-	margin-top: 5px;
+@keyframes party-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-.card {
-	max-width: 620px;
-	margin: 0 auto;
-	padding: 16px;
-	border: 1px solid lightgray;
-	border-radius: 16px;
+/* Floating particles */
+.background-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
 }
 
-.card p:last-child {
-	margin-bottom: 0;
+.floating-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--neon-primary);
+    border-radius: 50%;
+    animation: float 6s infinite ease-in-out;
+    box-shadow: 0 0 10px var(--neon-primary);
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.title {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(45deg, var(--neon-primary), var(--neon-secondary), var(--neon-accent));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease-in-out infinite;
+    text-shadow: 0 0 30px var(--neon-primary);
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.theme-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.theme-btn {
+    padding: 0.5rem 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 25px;
+    color: var(--text-primary);
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    font-size: 0.9rem;
+}
+
+.theme-btn:hover {
+    background: var(--glass-border);
+    box-shadow: 0 0 20px var(--neon-primary);
+    transform: translateY(-2px);
+}
+
+.theme-btn.active {
+    background: var(--neon-primary);
+    color: var(--bg-primary);
+    box-shadow: 0 0 25px var(--neon-primary);
+}
+
+.back-btn {
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    z-index: 100;
+}
+
+.back-btn:hover {
+    background: var(--glass-border);
+    box-shadow: 0 0 20px var(--neon-primary);
+    transform: scale(1.1);
+}
+
+.back-btn.active {
+    display: flex;
+}
+
+/* Main View and Section View toggles */
+.main-view {
+    display: block;
+}
+
+.main-view.hidden {
+    display: none;
+}
+
+.section-view {
+    display: none;
+    animation: fadeInUp 0.5s ease;
+}
+
+.section-view.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Icon Grid layout */
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.icon-card {
+    aspect-ratio: 1;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.icon-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.icon-card:hover::before {
+    left: 100%;
+}
+
+.icon-card:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(0, 255, 255, 0.3);
+    border-color: var(--neon-primary);
+}
+
+.icon-card.clicked {
+    animation: neon-pulse 0.6s ease;
+}
+
+@keyframes neon-pulse {
+    0% { box-shadow: 0 0 5px var(--neon-primary); }
+    50% { 
+        box-shadow: 0 0 50px var(--neon-primary), 0 0 100px var(--neon-secondary);
+        transform: scale(1.1);
+    }
+    100% { box-shadow: 0 0 5px var(--neon-primary); }
+}
+
+.icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 0 10px var(--neon-primary));
+}
+
+.icon-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    opacity: 0.9;
+}
+
+/* Placeholder section content styling */
+.section-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.section-text {
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.feature-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    border-color: var(--neon-primary);
+    box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.feature-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.feature-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Music player modal styling */
+.music-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.music-modal.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.music-player {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.music-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+}
+
+.music-header h3 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: var(--glass-border);
+    color: var(--neon-primary);
+}
+
+.current-song {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.song-info {
+    margin-bottom: 1rem;
+}
+
+.song-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.song-artist {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.song-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.control-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.control-btn:hover {
+    background: var(--glass-border);
+    box-shadow: 0 0 15px var(--neon-primary);
+    transform: scale(1.1);
+}
+
+.play-pause {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+    border-color: var(--neon-primary);
+}
+
+.progress-container {
+    margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--glass-border);
+    border-radius: 3px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-primary), var(--neon-secondary));
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s ease;
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.playlist {
+    margin-bottom: 1.5rem;
+}
+
+.playlist h4 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.song-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.song-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.song-item:hover {
+    background: var(--glass-border);
+    border-color: var(--neon-primary);
+}
+
+.song-item.active {
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 10px var(--neon-primary);
+}
+
+.song-item-info {
+    flex: 1;
+}
+
+.song-item-title {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.song-item-artist {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.player-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.option-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.option-btn:hover, .option-btn.active {
+    background: var(--glass-border);
+    color: var(--neon-primary);
+}
+
+.volume-slider {
+    flex: 1;
+    margin: 0 0.5rem;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--glass-border);
+    border-radius: 2px;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--neon-primary);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--neon-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.volume-icon {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+/* Custom Modal Styling for alerts */
+.message-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.message-modal.active {
+    display: flex;
+}
+
+.message-box {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    backdrop-filter: blur(20px);
+    padding: 2rem;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    animation: slideUp 0.3s ease;
+}
+
+.message-box h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--neon-primary);
+    margin-bottom: 1rem;
+}
+
+.message-box p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.message-box button {
+    background: var(--neon-primary);
+    color: var(--bg-primary);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.message-box button:hover {
+    box-shadow: 0 0 15px var(--neon-primary);
+}
+
+
+/* ===============================
+ * --- DATA TABLE EDITOR STYLING ---
+ * =============================== */
+.main-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+        
+.themed-button {
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.themed-button:hover {
+    transform: translateY(-1px);
+}
+
+.table-container {
+    max-height: 50vh;
+    overflow: auto;
+    border: 1px solid var(--glass-border);
+    transition: border-color 0.3s ease;
+}
+        
+table th {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--glass-border);
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+table td {
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+table tr:hover td {
+    background-color: var(--glass-border);
+}
+
+input[type="file"]::file-selector-button {
+    background-color: var(--accent-color);
+    color: white;
+    transition: background-color 0.2s ease;
+}
+input[type="file"]::file-selector-button:hover {
+    background-color: var(--accent-hover);
+}
+
+textarea {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.loader {
+    border-top-color: var(--accent-color);
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===========================
+ * --- RESPONSIVE STYLING ---
+ * =========================== */
+@media (max-width: 1024px) {
+    .icon-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .icon-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .title {
+        font-size: 2rem;
+    }
+    
+    .container {
+        padding: 1rem;
+    }
+
+    .music-player {
+        padding: 1.5rem;
+        width: 95%;
+    }
+
+    .song-controls {
+        gap: 0.5rem;
+    }
+
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .play-pause {
+        width: 50px;
+        height: 50px;
+    }
+
+    .back-btn {
+        top: 1rem;
+        left: 1rem;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 480px) {
+    .icon-grid {
+        grid-template-columns: 1fr;
+    }
 }
