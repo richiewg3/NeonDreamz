@@ -584,10 +584,11 @@ async function handleAiRequest() {
     toggleLoading(true);
 
     try {
-        const owner = '<owner>';
-        const repo = '<repo>';
-        const token = 'YOUR_GITHUB_TOKEN';
+        const owner = 'richiewg3';
+        const repo = 'NeonDreamz';
+        const token = 'YOUR_GITHUB_TOKEN'; // <-- IMPORTANT: Replace with your token
 
+        // Dispatch a GitHub Actions workflow to run the AI request
         const dispatchResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/ai-proxy.yml/dispatches`, {
             method: 'POST',
             headers: {
@@ -609,7 +610,7 @@ async function handleAiRequest() {
             throw new Error(`Dispatch failed: ${errText || dispatchResp.statusText}`);
         }
 
-        // Retrieve latest workflow run
+        // Wait for the workflow run to start and complete
         let runId = null;
         while (!runId) {
             const runsResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/ai-proxy.yml/runs?per_page=1`, {
@@ -620,7 +621,6 @@ async function handleAiRequest() {
             if (!runId) await new Promise(r => setTimeout(r, 3000));
         }
 
-        // Poll run status until completion
         let completed = false;
         while (!completed) {
             const runResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}`, {
@@ -637,7 +637,7 @@ async function handleAiRequest() {
             }
         }
 
-        // Retrieve AI response from job outputs
+        // Retrieve the AI response from the workflow output
         const jobsResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/jobs`, {
             headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
         });
@@ -645,9 +645,9 @@ async function handleAiRequest() {
         const aiResponse = jobsData.jobs?.[0]?.outputs?.ai_response;
         if (!aiResponse) throw new Error('No AI response found in workflow output.');
 
+        // Update the table with the AI's response
         const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
         if (!jsonMatch) throw new Error("AI did not return a valid JSON array.");
-
         const updatedData = JSON.parse(jsonMatch[0]);
 
         if (Array.isArray(updatedData)) {
