@@ -591,7 +591,7 @@ async function handleAiRequest() {
         // DO NOT expose real API keys in any public-facing project.
         // Hardcoding an API key in client-side code allows anyone to steal it.
         // This key is provided only for local testing at the user's request.
-        const openRouterApiKey = "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";
+        const openRouterApiKey = "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";
         
         const apiUrl = `https://openrouter.ai/api/v1/chat/completions`;
         
