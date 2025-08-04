@@ -132,6 +132,7 @@
                             hover:file:opacity-90 cursor-pointer
                         "/>
                         <button id="clear-data-btn" class="themed-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 hidden">Clear</button>
+                        <button id="load-session-btn" class="themed-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">Load Session</button>
                     </div>
                     <p id="file-name" class="text-sm text-[--text-secondary] mt-2"></p>
                 </div>
@@ -139,6 +140,12 @@
                 <!-- Step 2: View and Edit Data -->
                 <div id="table-section" class="hidden">
                      <h2 class="text-lg font-semibold mb-2 flex items-center"><span class="bg-[--accent-color] text-white rounded-full h-6 w-6 text-sm flex items-center justify-center mr-3">2</span>Your Data</h2>
+                    <div class="flex flex-wrap items-center mb-4 gap-2">
+                        <input id="filter-input" type="text" placeholder="Filter rows..." class="px-3 py-2 rounded-lg border focus:ring-2 focus:ring-[--accent-color] focus:border-[--accent-color]" />
+                        <button id="add-row-btn" class="themed-button px-4 py-2 bg-[--accent-color] text-white rounded-lg font-semibold hover:bg-[--accent-hover]">Add Row</button>
+                        <button id="undo-btn" class="themed-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300" disabled>Undo</button>
+                        <button id="redo-btn" class="themed-button px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300" disabled>Redo</button>
+                    </div>
                     <div id="table-container" class="table-container rounded-lg">
                         <table id="csv-table" class="min-w-full">
                             <!-- Table content will be generated here -->
@@ -165,10 +172,16 @@
                 <!-- Step 4: Download -->
                 <div id="download-section" class="hidden">
                     <h2 class="text-lg font-semibold mb-2 flex items-center"><span class="bg-[--accent-color] text-white rounded-full h-6 w-6 text-sm flex items-center justify-center mr-3">4</span>Download Result</h2>
-                    <button id="download-btn" class="themed-button w-full sm:w-auto px-6 py-3 bg-[--success-color] text-white rounded-lg font-semibold hover:bg-[--success-hover] flex items-center justify-center space-x-2 shadow-md">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download New CSV</span>
-                    </button>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="download-csv-btn" class="themed-button w-full sm:w-auto px-6 py-3 bg-[--success-color] text-white rounded-lg font-semibold hover:bg-[--success-hover] flex items-center justify-center space-x-2 shadow-md">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>Download as CSV</span>
+                        </button>
+                        <button id="download-json-btn" class="themed-button w-full sm:w-auto px-6 py-3 bg-[--success-color] text-white rounded-lg font-semibold hover:bg-[--success-hover] flex items-center justify-center space-x-2 shadow-md">
+                            <i class="fa-solid fa-file-code"></i>
+                            <span>Download as JSON</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

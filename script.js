@@ -65,12 +65,24 @@ const aiSection = document.getElementById('ai-section');
 const downloadSection = document.getElementById('download-section');
 const aiPrompt = document.getElementById('ai-prompt');
 const submitAiBtn = document.getElementById('submit-ai-btn');
-const downloadBtn = document.getElementById('download-btn');
+const downloadCsvBtn = document.getElementById('download-csv-btn');
+const downloadJsonBtn = document.getElementById('download-json-btn');
 const loader = document.getElementById('loader');
 const clearDataBtn = document.getElementById('clear-data-btn');
+const addRowBtn = document.getElementById('add-row-btn');
+const undoBtn = document.getElementById('undo-btn');
+const redoBtn = document.getElementById('redo-btn');
+const filterInput = document.getElementById('filter-input');
+const loadSessionBtn = document.getElementById('load-session-btn');
 
 let tableData = [];
 let tableHeaders = [];
+let undoStack = [];
+let redoStack = [];
+let sortColumn = null;
+let sortAscending = true;
+let filterValue = '';
+const STORAGE_KEY = 'dataTableEditorData';
 
 // =============================
 // --- ANIMATIONS & THEMES ---
@@ -328,8 +340,18 @@ musicModal.addEventListener('click', (e) => {
 // --- EVENT LISTENERS ---
 fileInput.addEventListener('change', handleFileUpload);
 submitAiBtn.addEventListener('click', handleAiRequest);
-downloadBtn.addEventListener('click', handleDownload);
+downloadCsvBtn.addEventListener('click', handleDownloadCsv);
+downloadJsonBtn.addEventListener('click', handleDownloadJson);
 clearDataBtn.addEventListener('click', resetApp);
+addRowBtn.addEventListener('click', addRow);
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
+filterInput.addEventListener('input', handleFilter);
+loadSessionBtn.addEventListener('click', () => loadFromLocalStorage(true));
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadFromLocalStorage();
+});
 
 // --- CORE FUNCTIONS ---
 
@@ -343,6 +365,8 @@ function handleFileUpload(event) {
         complete: (results) => {
             tableHeaders = results.meta.fields;
             tableData = results.data;
+            setInitialHistory();
+            saveToLocalStorage();
             renderTable();
             showDataTableSections();
         },
@@ -365,21 +389,40 @@ function renderTable() {
     tableHeaders.forEach(header => {
         const th = document.createElement('th');
         th.textContent = header;
-        th.className = 'sticky top-0 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider';
+        th.className = 'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer';
+        th.addEventListener('click', () => handleSort(header));
         headerRow.appendChild(th);
     });
+    const actionsTh = document.createElement('th');
+    actionsTh.className = 'px-4 py-3';
+    headerRow.appendChild(actionsTh);
     thead.appendChild(headerRow);
     csvTable.appendChild(thead);
 
     const tbody = document.createElement('tbody');
-    tableData.forEach(row => {
+    tableData.forEach((row, rowIndex) => {
+        const rowString = tableHeaders.map(h => (row[h] ?? '').toString().toLowerCase()).join(' ');
+        if (filterValue && !rowString.includes(filterValue)) return;
+
         const tr = document.createElement('tr');
+        tr.className = 'group';
         tableHeaders.forEach(header => {
             const td = document.createElement('td');
             td.textContent = row[header] !== undefined ? row[header] : '';
             td.className = 'px-4 py-3 whitespace-nowrap text-sm';
+            td.addEventListener('dblclick', () => editCell(td, rowIndex, header));
             tr.appendChild(td);
         });
+
+        const delTd = document.createElement('td');
+        delTd.className = 'px-4 py-3 text-center';
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        delBtn.className = 'delete-row-btn text-red-400';
+        delBtn.addEventListener('click', () => deleteRow(rowIndex));
+        delTd.appendChild(delBtn);
+        tr.appendChild(delTd);
+
         tbody.appendChild(tr);
     });
     csvTable.appendChild(tbody);
@@ -399,10 +442,137 @@ function resetApp() {
     fileNameDisplay.textContent = '';
     csvTable.innerHTML = '';
     aiPrompt.value = '';
+    filterInput.value = '';
+    filterValue = '';
     tableSection.classList.add('hidden');
     aiSection.classList.add('hidden');
     downloadSection.classList.add('hidden');
     clearDataBtn.classList.add('hidden');
+    undoStack = [];
+    redoStack = [];
+    updateUndoRedoButtons();
+    localStorage.removeItem(STORAGE_KEY);
+}
+
+function addRow() {
+    if (tableHeaders.length === 0) return;
+    const newRow = {};
+    tableHeaders.forEach(h => newRow[h] = '');
+    tableData.push(newRow);
+    pushHistory();
+    saveToLocalStorage();
+    renderTable();
+}
+
+function deleteRow(index) {
+    tableData.splice(index, 1);
+    pushHistory();
+    saveToLocalStorage();
+    renderTable();
+}
+
+function editCell(td, rowIndex, header) {
+    const originalValue = tableData[rowIndex][header] ?? '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = originalValue;
+    td.classList.add('editing-cell');
+    td.textContent = '';
+    td.appendChild(input);
+    input.focus();
+
+    function commit() {
+        tableData[rowIndex][header] = input.value;
+        pushHistory();
+        saveToLocalStorage();
+        renderTable();
+    }
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            commit();
+        }
+    });
+    input.addEventListener('blur', commit);
+}
+
+function handleSort(header) {
+    if (sortColumn === header) {
+        sortAscending = !sortAscending;
+    } else {
+        sortColumn = header;
+        sortAscending = true;
+    }
+    tableData.sort((a, b) => {
+        const valA = (a[header] ?? '').toString();
+        const valB = (b[header] ?? '').toString();
+        return sortAscending ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' }) : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    pushHistory();
+    saveToLocalStorage();
+    renderTable();
+}
+
+function handleFilter(e) {
+    filterValue = e.target.value.toLowerCase();
+    renderTable();
+}
+
+function pushHistory() {
+    undoStack.push(JSON.parse(JSON.stringify(tableData)));
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack = [];
+    updateUndoRedoButtons();
+}
+
+function setInitialHistory() {
+    undoStack = [JSON.parse(JSON.stringify(tableData))];
+    redoStack = [];
+    updateUndoRedoButtons();
+}
+
+function undo() {
+    if (undoStack.length > 1) {
+        redoStack.push(undoStack.pop());
+        tableData = JSON.parse(JSON.stringify(undoStack[undoStack.length - 1]));
+        saveToLocalStorage();
+        renderTable();
+        updateUndoRedoButtons();
+    }
+}
+
+function redo() {
+    if (redoStack.length > 0) {
+        const state = redoStack.pop();
+        undoStack.push(JSON.parse(JSON.stringify(state)));
+        tableData = JSON.parse(JSON.stringify(state));
+        saveToLocalStorage();
+        renderTable();
+        updateUndoRedoButtons();
+    }
+}
+
+function updateUndoRedoButtons() {
+    undoBtn.disabled = undoStack.length <= 1;
+    redoBtn.disabled = redoStack.length === 0;
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tableData));
+}
+
+function loadFromLocalStorage(showMessage = false) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        tableData = JSON.parse(saved);
+        setInitialHistory();
+        renderTable();
+        showDataTableSections();
+        return true;
+    } else if (showMessage) {
+        showModal('Load Session', 'No saved data found.');
+    }
+    return false;
 }
 
 async function handleAiRequest() {
@@ -418,10 +588,9 @@ async function handleAiRequest() {
     
     try {
         // !!! SECURITY WARNING !!!
-        // Hardcoding an API key in client-side code is a major security
-        // risk. It exposes your key to anyone who views the page source.
-        // This has been done at the user's explicit request for private use
-        // and against strong recommendations for public-facing sites.
+        // DO NOT expose real API keys in any public-facing project.
+        // Hardcoding an API key in client-side code allows anyone to steal it.
+        // This key is provided only for local testing at the user's request.
         const openRouterApiKey = "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";
         
         const apiUrl = `https://openrouter.ai/api/v1/chat/completions`;
@@ -459,6 +628,8 @@ async function handleAiRequest() {
 
         if (Array.isArray(updatedData)) {
             tableData = updatedData;
+            pushHistory();
+            saveToLocalStorage();
             renderTable();
             aiPrompt.value = '';
         } else {
@@ -472,7 +643,7 @@ async function handleAiRequest() {
     }
 }
 
-function handleDownload() {
+function handleDownloadCsv() {
     if (tableData.length === 0) {
         showModal('Download Error', 'No data to download.');
         return;
@@ -486,6 +657,23 @@ function handleDownload() {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
     link.setAttribute('download', 'updated_data.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function handleDownloadJson() {
+    if (tableData.length === 0) {
+        showModal('Download Error', 'No data to download.');
+        return;
+    }
+    const jsonContent = JSON.stringify(tableData, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'updated_data.json');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -743,6 +743,9 @@ table th {
     color: var(--text-primary);
     border-bottom: 2px solid var(--glass-border);
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 table td {
@@ -753,6 +756,38 @@ table td {
 
 table tr:hover td {
     background-color: var(--glass-border);
+}
+
+/* Editing state */
+.editing-cell {
+    outline: 2px solid var(--accent-color);
+    box-shadow: 0 0 8px var(--accent-color);
+}
+
+.editing-cell input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    outline: none;
+}
+
+/* Delete row button visibility */
+.delete-row-btn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+tr:hover .delete-row-btn {
+    opacity: 1;
+}
+
+/* Text inputs */
+input[type="text"] {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 input[type="file"]::file-selector-button {
