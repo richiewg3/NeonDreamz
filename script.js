@@ -583,38 +583,18 @@ async function handleAiRequest() {
     }
     toggleLoading(true);
 
-    const systemPrompt = `You are an intelligent data editing assistant. Your task is to modify the provided JSON dataset based on the user's instruction. You must return ONLY the updated dataset in a valid JSON array-of-objects format. Do not add any commentary, explanations, markdown formatting, or any text outside of the JSON structure.`;
-    const fullUserPrompt = `User instruction: "${userPrompt}"\n\nInput Dataset:\n${JSON.stringify(tableData, null, 2)}`;
-    
     try {
-        // !!! SECURITY WARNING !!!
-        // DO NOT expose real API keys in any public-facing project.
-        // Hardcoding an API key in client-side code allows anyone to steal it.
-        // This key is provided only for local testing at the user's request.
-        const openRouterApiKey = "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";
-        
-        const apiUrl = `https://openrouter.ai/api/v1/chat/completions`;
-        
-        const payload = {
-            model: "anthropic/claude-3.5-sonnet",
-            messages: [
-                { "role": "system", "content": systemPrompt },
-                { "role": "user", "content": fullUserPrompt }
-            ]
-        };
-
-        const response = await fetch(apiUrl, {
+        const response = await fetch('/api-proxy', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openRouterApiKey}`
+            headers: {
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ userPrompt, tableData })
         });
 
         if (!response.ok) {
-            const errorDetail = await response.json();
-            throw new Error(`API request failed: ${errorDetail?.error?.message || response.statusText}`);
+            const errorDetail = await response.json().catch(() => ({}));
+            throw new Error(`Proxy request failed: ${errorDetail?.error || response.statusText}`);
         }
 
         const result = await response.json();
